@@ -1,4 +1,9 @@
 pipeline {
+    environment{
+        registry = "harshithpendyala/calculator_java"
+        registryCredential='dockerhub_id'
+        dockerImage= ''
+    }
     agent any
 
     stages {
@@ -27,6 +32,29 @@ pipeline {
                     archiveArtifacts 'target/*.jar'
                 }
             }
+        }
+        stage('Building Docker Image'){
+            steps{
+                script{
+                    dockerImage = docker.build registry + ":$BUILD_NUMBER"
+                }
+            }
+        }
+        stage('Deploying Docker Image'){
+                    steps{
+                        script{
+                            docker.withRegistry('',registryCredential){
+                                dockerImage.push()
+                            }
+                        }
+                    }
+        }
+        stage('cleaning up'){
+                    steps{
+                        script{
+                            bat "docker rmi $registry:$BUILD_NUMBER"
+                        }
+                    }
         }
     }
 }
